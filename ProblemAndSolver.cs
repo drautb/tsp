@@ -110,6 +110,12 @@ namespace TSP
         /// random number generator. 
         /// </summary>
         private Random rnd;
+
+        /// <summary>
+        /// true random number generator. This generator is not influenced by the seed,
+        /// thus is can return random results even when the same seed is used.
+        /// </summary>
+        private Random trueRand = new Random();
         #endregion
 
         #region Public members
@@ -325,13 +331,12 @@ namespace TSP
          */
         private void getGreedyRoute()
         {
-            Random rand = new Random();
             double distance = double.PositiveInfinity;
 
             while (double.IsPositiveInfinity(distance))
             {
                 // Pick a random starting point, add it to the route
-                City startCity = Cities[rand.Next(Cities.Length)];
+                City startCity = Cities[trueRand.Next(Cities.Length)];
                 Route.Add(startCity);
 
                 while (Route.Count != Cities.Length)
@@ -366,16 +371,15 @@ namespace TSP
         public void solveRandom()
         {
             Route = new ArrayList();
-            Random rand = new Random();
 
-            City startCity = Cities[rand.Next(Cities.Length)];
+            City startCity = Cities[trueRand.Next(Cities.Length)];
             Route.Add(startCity);
 
             int failCount = 0;
 
             while (Route.Count < Cities.Length)
             {
-                City nextCity = Cities[rand.Next(Cities.Length)];
+                City nextCity = Cities[trueRand.Next(Cities.Length)];
                 if (Route.Contains(nextCity))
                     continue;
 
@@ -387,7 +391,7 @@ namespace TSP
                         // Start over
                         failCount = 0;
                         Route.Clear();
-                        startCity = Cities[rand.Next(Cities.Length)];
+                        startCity = Cities[trueRand.Next(Cities.Length)];
                         Route.Add(startCity);
                     }
 
@@ -420,6 +424,9 @@ namespace TSP
         /**
          * Custom TSP solver - Uses Simulated Annealing
          * 
+         * Ben implemented the base algorithm using this page as a guide:
+         * - http://www.codeproject.com/Articles/26758/Simulated-Annealing-Solving-the-Travelling-Salesma
+         * 
          * Revisions:
          * 20 Nov 2012 - Ben - Implemented Base SA algorithm
          * 
@@ -437,6 +444,9 @@ namespace TSP
             double deltaDistance = 0;
             double distance = 0;
 
+            ArrayList alternateRoute = null;
+            TSPSolution alternateSolution = null;
+
             // First, we need to have a solution to start with. Right now 
             // it's just taking a greedy solution. This may be one place that 
             // we could implement an optimization?
@@ -446,7 +456,51 @@ namespace TSP
             bssf = new TSPSolution(Route);
             distance = bssf.costOfRoute();
 
+            while (temperature > absoluteTemp)
+            {
+                // Get an alternate solution and calculate the difference in their costs
+                alternateRoute = getAlternateRouteSA(Route);
+                alternateSolution = new TSPSolution(alternateRoute);
 
+                deltaDistance = alternateSolution.costOfRoute() - distance;
+
+                // If the cost is less, OR if the distance is larger, BUT satifsfies the 
+                // Boltzmann condition, then we accept the new arrangement.
+                if ((deltaDistance < 0) ||
+                    (distance > 0 && Math.Exp(-deltaDistance / temperature) > trueRand.NextDouble()))
+                {
+                    // Accept this new arrangement
+                    Route = alternateRoute;
+
+                    distance = distance + deltaDistance;
+                }
+
+                // Cool down the temperature
+                temperature *= coolingRate;
+
+                iteration++;
+            }
+
+            bssf = new TSPSolution(Route);
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            // do a refresh. 
+            Program.MainForm.Invalidate();
+            return;
+        }
+
+        /**
+         * Returns a random variation on route that is still correct. (assuming that 
+         * route was complete to begin with)
+         * 
+         * Used in the SA algorithm.
+         */
+        private ArrayList getAlternateRouteSA(ArrayList route)
+        {
+
+
+            return null;
         }
 
         #endregion
