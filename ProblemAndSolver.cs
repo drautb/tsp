@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace TSP
 {
@@ -336,6 +337,7 @@ namespace TSP
             while (double.IsPositiveInfinity(distance))
             {
                 // Pick a random starting point, add it to the route
+                Route.Clear();
                 City startCity = Cities[trueRand.Next(Cities.Length)];
                 Route.Add(startCity);
 
@@ -495,12 +497,62 @@ namespace TSP
          * route was complete to begin with)
          * 
          * Used in the SA algorithm.
-         */
+         * 
+         * Method: This is a variation of the 2-opt stragegy. The algorithm picks two edges 
+         * at random, and then shifts the path so that their endpoints are connected edges. 
+         * For example, if you pick two edges, [a,b] and [c,d], this will return the route where
+         * rather than [a,b] and [c,d], it has [a,c] and [b,d]. 
+         * 
+         */  
         private ArrayList getAlternateRouteSA(ArrayList route)
         {
+            ArrayList altRoute = new ArrayList(route);
 
+            // We can't do this for less than 4 cities
+            if (route.Count < 4)
+                return altRoute;
 
-            return null;
+            // Pick two random edges to cut out and reconnect.
+            int e1 = 0, e2 = 0; // Starting cities of both edges, (indices in Route)
+            while (e2 - e1 < 2)
+            {
+                e1 = trueRand.Next(route.Count);
+                e2 = trueRand.Next(route.Count);
+            }
+
+            // Make sure that e1 always refers to the earlier edge.
+            if (e1 > e2)
+            {
+                int temp = e1;
+                e1 = e2;
+                e2 = temp;
+            }
+
+            // We have the two edges now that we're going to mess with, so now we need 
+            // to adjust the route to correctly describe the new path.
+            // This involves switching the edges so that [a,b] and [c,d] become [a,c] and [b,d], 
+            // but also making sure that we adjust the order of the cities between c and b.
+            //
+            // For example, if we have a route: [1,2,3,4,5,6,7,8], and we choose edges [2,3] and [7,8] 
+            // to switch. Well, if we switch them and then stop, we'll have [1,2,7,4,5,6,3,8]. 
+            // At first that may seem ok, but if you draw a picture, you'll see we actually want
+            // this: [1,2,7,6,5,4,3,8]
+            //
+            // We'll do them at the same time by just flipping the entire route between b and c.
+            // Until e1 and e2 equal eachother, or they cross, we just march towards the middle, 
+            // swapping cities in the route as we go.
+            City swapMe = null;
+            while (e1 != e2 && e1 < e2)
+            {
+                swapMe = (City)altRoute[e1];
+                altRoute[e1] = altRoute[e2];
+                altRoute[e2] = swapMe;
+
+                e1++;
+                e2--;
+            }
+
+            return altRoute;
         }
 
         #endregion
