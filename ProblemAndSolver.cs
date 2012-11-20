@@ -308,30 +308,7 @@ namespace TSP
          */
         public void solveGreedy()
         {
-            Random rand = new Random();
-
-            // Pick a random starting point, add it to the route
-            City startCity = Cities[rand.Next(Cities.Length)];
-            Route.Add(startCity);
-
-            while (Route.Count != Cities.Length)
-            {
-                int minCity = -1;
-
-                for (int i=0; i<Cities.Length; i++)
-                {
-                    if (Route.Contains(Cities[i]))
-                        continue;
-
-                    if (minCity == -1)
-                        minCity = i;
-                    else if (((City)Route[Route.Count - 1]).costToGetTo(Cities[i]) <
-                             ((City)Route[Route.Count - 1]).costToGetTo(Cities[minCity]))
-                        minCity = i;
-                }
-
-                Route.Add(Cities[minCity]);
-            }
+            getGreedyRoute();
 
             bssf = new TSPSolution(Route);
             // update the cost of the tour. 
@@ -339,6 +316,46 @@ namespace TSP
             // do a refresh. 
             Program.MainForm.Invalidate();
             return;
+        }
+
+        /**
+         * Finds a greedy solution, storing the path in Route.
+         * 
+         * The path will be complete.
+         */
+        private void getGreedyRoute()
+        {
+            Random rand = new Random();
+            double distance = double.PositiveInfinity;
+
+            while (double.IsPositiveInfinity(distance))
+            {
+                // Pick a random starting point, add it to the route
+                City startCity = Cities[rand.Next(Cities.Length)];
+                Route.Add(startCity);
+
+                while (Route.Count != Cities.Length)
+                {
+                    int minCity = -1;
+
+                    for (int i = 0; i < Cities.Length; i++)
+                    {
+                        if (Route.Contains(Cities[i]))
+                            continue;
+
+                        if (minCity == -1)
+                            minCity = i;
+                        else if (((City)Route[Route.Count - 1]).costToGetTo(Cities[i]) <
+                                 ((City)Route[Route.Count - 1]).costToGetTo(Cities[minCity]))
+                            minCity = i;
+                    }
+
+                    Route.Add(Cities[minCity]);
+                }
+
+                TSPSolution sol = new TSPSolution(Route);
+                distance = sol.costOfRoute();
+            }
         }
 
         /**
@@ -397,14 +414,38 @@ namespace TSP
          */
         public void solveBranchAndBound()
         {
-
+            
         }
 
         /**
-         * Custom TSP solver...
+         * Custom TSP solver - Uses Simulated Annealing
+         * 
+         * Revisions:
+         * 20 Nov 2012 - Ben - Implemented Base SA algorithm
+         * 
+         * 
          */
         public void solveCustom()
         {
+            // Keep track of how many iterations we did
+            int iteration = -1;
+
+            // variables for SA
+            double temperature = 10000.0;
+            double absoluteTemp = 0.00001;
+            double coolingRate = 0.9999;
+            double deltaDistance = 0;
+            double distance = 0;
+
+            // First, we need to have a solution to start with. Right now 
+            // it's just taking a greedy solution. This may be one place that 
+            // we could implement an optimization?
+            getGreedyRoute();
+
+            // Generate a new solution using the Greedy route
+            bssf = new TSPSolution(Route);
+            distance = bssf.costOfRoute();
+
 
         }
 
