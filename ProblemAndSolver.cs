@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace TSP
 {
@@ -315,11 +316,17 @@ namespace TSP
          */
         public void solveGreedy()
         {
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
             getGreedyRoute();
+
+            timer.Stop();
 
             bssf = new TSPSolution(Route);
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
             // do a refresh. 
             Program.MainForm.Invalidate();
             return;
@@ -378,6 +385,8 @@ namespace TSP
             Route.Add(startCity);
 
             int failCount = 0;
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
 
             while (Route.Count < Cities.Length)
             {
@@ -404,9 +413,12 @@ namespace TSP
                     Route.Add(nextCity);
                     if (Route.Count == Cities.Length)
                     {
+                        timer.Stop();
+
                         bssf = new TSPSolution(Route);
                         // update the cost of the tour. 
                         Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
                         // do a refresh. 
                         Program.MainForm.Invalidate();
                         return;
@@ -441,6 +453,10 @@ namespace TSP
 
             // variables for SA
             double temperature = 10000.0;
+            
+            // Higher temperature takes longer to run, but yields better results on larger city counts.
+            //double temperature = 100000.0;
+            
             double absoluteTemp = 0.00001;
             double coolingRate = 0.9999;
             double deltaDistance = 0;
@@ -457,6 +473,9 @@ namespace TSP
             // Generate a new solution using the Greedy route
             bssf = new TSPSolution(Route);
             distance = bssf.costOfRoute();
+
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
 
             while (temperature > absoluteTemp)
             {
@@ -483,10 +502,14 @@ namespace TSP
                 iteration++;
             }
 
+            timer.Stop();
+
             bssf = new TSPSolution(Route);
 
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
             // do a refresh. 
             Program.MainForm.Invalidate();
             return;
