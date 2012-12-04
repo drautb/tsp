@@ -118,6 +118,11 @@ namespace TSP
         /// thus is can return random results even when the same seed is used.
         /// </summary>
         private Random trueRand = new Random();
+
+        /// <summary>
+        ///  this keeps a list of all the neighboring cities for a certain city
+        /// </summary>
+
         #endregion
 
         #region Public members
@@ -339,13 +344,21 @@ namespace TSP
          */
         private void getGreedyRoute()
         {
+            cityToRoute = new int[Cities.Length];
+            routeToCity = new int[Cities.Length];
+            temp_cityToRoute = new int[Cities.Length];
+            temp_routeToCity = new int[Cities.Length];
             double distance = double.PositiveInfinity;
+            int seed;
 
             while (double.IsPositiveInfinity(distance))
             {
                 // Pick a random starting point, add it to the route
                 Route.Clear();
-                City startCity = Cities[trueRand.Next(Cities.Length)];
+                seed = trueRand.Next(Cities.Length);
+                City startCity = Cities[seed];
+                routeToCity[Route.Count] = seed;
+                cityToRoute[seed] = Route.Count;
                 Route.Add(startCity);
 
                 while (Route.Count != Cities.Length)
@@ -363,7 +376,8 @@ namespace TSP
                                  ((City)Route[Route.Count - 1]).costToGetTo(Cities[minCity]))
                             minCity = i;
                     }
-
+                    routeToCity[Route.Count] = minCity;
+                    cityToRoute[minCity] = Route.Count;
                     Route.Add(Cities[minCity]);
                 }
 
@@ -448,17 +462,20 @@ namespace TSP
          */
         public void solveCustom()
         {
+            // test the findNeighbors method
+            findNeighbors();
+
             // Keep track of how many iterations we did
             int iteration = -1;
 
             // variables for SA
-            double temperature = 10000.0;
+            double temperature = 1.0;
             
             // Higher temperature takes longer to run, but yields better results on larger city counts.
             //double temperature = 100000.0;
             
             double absoluteTemp = 0.00001;
-            double coolingRate = 0.9999;
+            double coolingRate = .8000; // 0.9999;
             double deltaDistance = 0;
             double distance = 0;
 
@@ -490,8 +507,11 @@ namespace TSP
                 if ((deltaDistance < 0) ||
                     (distance > 0 && Math.Exp(-deltaDistance / temperature) > trueRand.NextDouble()))
                 {
+                    Debug.WriteLine("found better solution!");
                     // Accept this new arrangement
                     Route = alternateRoute;
+                    Array.Copy(temp_cityToRoute, cityToRoute, cityToRoute.Length);
+                    Array.Copy(temp_routeToCity, routeToCity, routeToCity.Length);
 
                     distance = distance + deltaDistance;
                 }
@@ -515,6 +535,188 @@ namespace TSP
             return;
         }
 
+        double max_x, min_x, max_y, min_y;
+        int dim_x, dim_y;
+        double SCALE_FACTOR = 1000;
+        double x_inc, y_inc;
+        private ArrayList[,] neighbors;
+        private int[] neighbor_x, neighbor_y;
+        int[] cityToRoute, routeToCity;
+        int[] temp_cityToRoute, temp_routeToCity;
+
+        /// <summary>
+        /// find neighboring cities
+        /// </summary>
+        /// 
+        private void findNeighbors()
+        {
+            int i, j;
+            //double avg_distance = 0, distance, distance_limit;
+
+            //Random rnd = new Random();
+            //seed = rnd.Next(Cities.Length);
+            //Debug.WriteLine("seed:\t" + seed);
+            max_x = double.NegativeInfinity;
+            min_x = double.PositiveInfinity;
+            max_y = double.NegativeInfinity;
+            min_y = double.PositiveInfinity;
+
+            for (i = 0; i < Cities.Length; i++)
+            {
+                if (Math.Ceiling(Cities[i].X * SCALE_FACTOR) > max_x)
+                    max_x = Math.Ceiling(Cities[i].X * SCALE_FACTOR);
+                if (Math.Floor(Cities[i].X * SCALE_FACTOR) < min_x)
+                    min_x = Math.Floor(Cities[i].X * SCALE_FACTOR);
+                if (Math.Ceiling(Cities[i].Y * SCALE_FACTOR) > max_y)
+                    max_y = Math.Ceiling(Cities[i].Y * SCALE_FACTOR);
+                if (Math.Floor(Cities[i].Y * SCALE_FACTOR) < min_y)
+                    min_y = Math.Floor(Cities[i].Y * SCALE_FACTOR);
+
+                //Debug.WriteLine("distance:\t" + distance);
+            }
+
+            //Debug.WriteLine("top:\t" + max_x + "\tbottom:\t" + min_x + "\tleft:\t" + min_y + "\tright:\t" + max_y);
+            double city_sqrt = Math.Sqrt(Cities.Length);
+            x_inc = (max_x - min_y) / city_sqrt; //(max_x - min_x) / Cities.Length;
+            y_inc = (max_y - min_y) / city_sqrt; //(max_y - min_y) / Cities.Length;
+            
+            dim_x = dim_y = (int)Math.Ceiling(city_sqrt);
+            int[,] counter = new int[dim_x, dim_y];
+            neighbors = new ArrayList[dim_x, dim_y];
+            neighbor_x = new int[Cities.Length];
+            neighbor_y = new int[Cities.Length];
+
+            //ArrayList my_neighbors;
+            for (i = 0; i < dim_x; i++)
+            {
+                for (j = 0; j < dim_y; j++)
+                {
+                    //Debug.Write(counter[i, j] + "\t");
+                    counter[i, j] = 0;
+                    neighbors[i, j] = new ArrayList();
+                }
+                //Debug.Write("\n");
+            }
+
+            //neighbors = new ArrayList[Cities.Length];
+
+            coordinate cur_city;
+            //int city_x, city_y;
+            for (i = 0; i < Cities.Length; i++)
+            {
+                cur_city = getCoor(Cities[i]);
+                //Debug.WriteLine("city:\t" + i + "\tx:\t" + cur_city.getX() + "\ty:\t" + cur_city.getY());
+
+                neighbors[cur_city.getX(), cur_city.getY()].Add(i);
+                counter[cur_city.getX(), cur_city.getY()] = counter[cur_city.getX(), cur_city.getY()] + 1;
+                neighbor_x[i] = cur_city.getX();
+                neighbor_y[i] = cur_city.getY();
+            }
+
+
+
+            //for (i = 0; i < dim_x; i++)
+            {
+            ///    for (j = 0; j < dim_y; j++)
+                {
+                    //Debug.Write(neighbors[i, j].Count + "\t");
+             //       for (int l = 0; l < neighbors[i, j].Count; l++)
+                    {
+                        //Debug.Write(neighbors[i, j][l] + "\t");
+                    }
+                }
+                //Debug.Write("\n");
+            }
+
+            //Debug.WriteLine("x inc:\t" + dim_x + "\ty inc:\t" + dim_y);
+            //Debug.WriteLine("Distance Limit:\t" + distance_limit);
+
+        }
+
+        private void printNeighbor(City in_city)
+        {
+            coordinate coor = getCoor(in_city);
+            int x, y;
+            x = coor.getX();
+            y = coor.getY();
+
+            Debug.WriteLine("neighbors for:\t" + x + "\t" + y);
+            for(int i = 0; i < neighbors[x, y].Count; i++)
+            {
+                Debug.WriteLine(neighbors[x, y][i]);
+            }
+            Debug.WriteLine("******");
+        }
+
+        private class coordinate
+        {
+            public coordinate(int in_x, int in_y)
+            {
+                x = in_x;
+                y = in_y;
+            }
+
+            public int getX()
+            {
+                return x;
+            }
+
+            public int getY()
+            {
+                return y;
+            }
+
+            private int x, y;
+        }
+
+        private coordinate getCoor(City in_city)
+        {
+            int x = (int)(Math.Floor((in_city.X * SCALE_FACTOR - min_x) / x_inc));
+            int y = (int)(Math.Floor((in_city.Y * SCALE_FACTOR - min_y) / y_inc));
+            coordinate coor = new coordinate(x, y);
+
+            return coor;
+        }
+
+        private ArrayList getNeighbors(int city_index)
+        {
+            ArrayList cur_neighbors = new ArrayList();
+            int x = neighbor_x[city_index];
+            int y = neighbor_y[city_index];
+
+            // add yourself
+            cur_neighbors.AddRange(neighbors[x, y]);
+            cur_neighbors.Remove(city_index);
+
+            // add the neighbors
+            if (x + 1 < dim_x)
+            {
+                cur_neighbors.AddRange(neighbors[x + 1, y]);
+                if (y + 1 < dim_y)
+                    cur_neighbors.AddRange(neighbors[x + 1, y + 1]);
+                if (y - 1 >= 0)
+                    cur_neighbors.AddRange(neighbors[x + 1, y - 1]);
+            }
+
+            if (x - 1 >= 0)
+            {
+                cur_neighbors.AddRange(neighbors[x - 1, y]);
+                if (y + 1 < dim_y)
+                    cur_neighbors.AddRange(neighbors[x - 1, y + 1]);
+                if (y - 1 >= 0)
+                    cur_neighbors.AddRange(neighbors[x - 1, y - 1]);
+            }
+
+            if (y - 1 >= 0)
+                cur_neighbors.AddRange(neighbors[x, y - 1]);
+            if (y + 1 < dim_y)
+                cur_neighbors.AddRange(neighbors[x, y + 1]);
+
+            //Debug.WriteLine("x:\t" + x + "\ty:\t" + y + "\tcount:\t" + cur_neighbors.Count);
+
+            return cur_neighbors;
+        }
+
         /**
          * Returns a random variation on route that is still correct. (assuming that 
          * route was complete to begin with)
@@ -530,17 +732,42 @@ namespace TSP
         private ArrayList getAlternateRouteSA(ArrayList route)
         {
             ArrayList altRoute = new ArrayList(route);
-
+            ArrayList choices;
             // We can't do this for less than 4 cities
             if (route.Count < 4)
                 return altRoute;
 
             // Pick two random edges to cut out and reconnect.
             int e1 = 0, e2 = 0; // Starting cities of both edges, (indices in Route)
+            //int neighbor_search;   // this decides if a near neighbor is chosen or not
             while (e2 - e1 < 2)
             {
+                //neighbor_search = trueRand.Next(2);
                 e1 = trueRand.Next(route.Count);
-                e2 = trueRand.Next(route.Count);
+                //printNeighbor((City)altRoute[e1]);
+                
+                choices = getNeighbors(routeToCity[e1]);
+                //for (int i = 0; i < choices.Count; i++)
+                {
+                    //Debug.WriteLine(choices[i]);
+                }
+                
+                //if (neighbor_search == 1)
+                {
+                    e2 = (int) choices[trueRand.Next(choices.Count)];
+                    //Debug.WriteLine("e1:\t" + e1 + "\tactual city e1:\t" + routeToCity[e1] + "\te2:\t" + e2 + "\tactual e2:\t" + routeToCity[e2]);
+                }
+
+                //for (int i = 0; i < cityToRoute.Length; i++)
+                {
+                    //Debug.WriteLine(i + "\t" + cityToRoute[i] + "\t" + routeToCity[i]);
+                }
+
+                //else
+                {
+                    //e2 = trueRand.Next(route.Count);
+                }
+                //Debug.WriteLine(e1 + "\t" + neighbors[e1][trueRand.Next(neighbors[e1].Count)]);
             }
 
             // Make sure that e1 always refers to the earlier edge.
@@ -565,14 +792,31 @@ namespace TSP
             // Until e1 and e2 equal eachother, or they cross, we just march towards the middle, 
             // swapping cities in the route as we go.
             City swapMe = null;
+            int swapPosRoute, swapPosCity;
+            Array.Copy(routeToCity, temp_routeToCity, routeToCity.Length);
+            Array.Copy(cityToRoute, temp_cityToRoute, cityToRoute.Length);
             while (e1 != e2 && e1 < e2)
             {
                 swapMe = (City)altRoute[e1];
+                swapPosRoute = routeToCity[e1];
+                swapPosCity = cityToRoute[routeToCity[e1]];
+
                 altRoute[e1] = altRoute[e2];
+                temp_routeToCity[e1] = routeToCity[e2];
+                temp_cityToRoute[routeToCity[e1]] = e2;
+
                 altRoute[e2] = swapMe;
+                temp_routeToCity[e2] = swapPosRoute;
+                temp_cityToRoute[routeToCity[e2]] = swapPosCity;
 
                 e1++;
                 e2--;
+            }
+
+            //Debug.WriteLine("*****");
+            //for (int i = 0; i < cityToRoute.Length; i++)
+            {
+                //Debug.WriteLine(i + "\t" + temp_cityToRoute[i] + "\t" + temp_routeToCity[i]);
             }
 
             return altRoute;

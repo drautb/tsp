@@ -81,14 +81,14 @@ namespace TSP
             // toolStripLabel2
             // 
             this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(75, 22);
+            this.toolStripLabel2.Size = new System.Drawing.Size(67, 22);
             this.toolStripLabel2.Text = "Problem Size";
             // 
             // tbProblemSize
             // 
             this.tbProblemSize.Name = "tbProblemSize";
             this.tbProblemSize.Size = new System.Drawing.Size(50, 25);
-            this.tbProblemSize.Text = "20";
+            this.tbProblemSize.Text = "10";
             this.tbProblemSize.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.tbProblemSize.Leave += new System.EventHandler(this.tbProblemSize_Leave);
             this.tbProblemSize.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tbProblemSize_KeyDown);
@@ -117,7 +117,7 @@ namespace TSP
             // toolStripLabel3
             // 
             this.toolStripLabel3.Name = "toolStripLabel3";
-            this.toolStripLabel3.Size = new System.Drawing.Size(70, 22);
+            this.toolStripLabel3.Size = new System.Drawing.Size(65, 22);
             this.toolStripLabel3.Text = "Cost of tour";
             // 
             // tbCostOfTour
@@ -136,7 +136,7 @@ namespace TSP
             // toolStripLabel4
             // 
             this.toolStripLabel4.Name = "toolStripLabel4";
-            this.toolStripLabel4.Size = new System.Drawing.Size(58, 22);
+            this.toolStripLabel4.Size = new System.Drawing.Size(53, 22);
             this.toolStripLabel4.Text = "Solved in ";
             // 
             // tbElapsedTime
@@ -177,7 +177,7 @@ namespace TSP
             this.AlgorithmMenu2.Image = ((System.Drawing.Image)(resources.GetObject("AlgorithmMenu2.Image")));
             this.AlgorithmMenu2.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.AlgorithmMenu2.Name = "AlgorithmMenu2";
-            this.AlgorithmMenu2.Size = new System.Drawing.Size(77, 22);
+            this.AlgorithmMenu2.Size = new System.Drawing.Size(68, 22);
             this.AlgorithmMenu2.Text = "Algorithm";
             this.AlgorithmMenu2.ButtonClick += new System.EventHandler(this.AlgorithmMenu2_ButtonClick_1);
             this.AlgorithmMenu2.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.AlgorithmMenu2_DropDownItemClicked);
@@ -185,35 +185,35 @@ namespace TSP
             // dToolStripMenuItem
             // 
             this.dToolStripMenuItem.Name = "dToolStripMenuItem";
-            this.dToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.dToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.dToolStripMenuItem.Text = "Default";
             this.dToolStripMenuItem.Click += new System.EventHandler(this.dToolStripMenuItem_Click);
             // 
             // yourTSPToolStripMenuItem1
             // 
             this.yourTSPToolStripMenuItem1.Name = "yourTSPToolStripMenuItem1";
-            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(122, 22);
+            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.yourTSPToolStripMenuItem1.Text = "Your TSP";
             this.yourTSPToolStripMenuItem1.Click += new System.EventHandler(this.yourTSPToolStripMenuItem1_Click);
             // 
             // randomToolStripMenuItem1
             // 
             this.randomToolStripMenuItem1.Name = "randomToolStripMenuItem1";
-            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(122, 22);
+            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.randomToolStripMenuItem1.Text = "Random";
             this.randomToolStripMenuItem1.Click += new System.EventHandler(this.randomToolStripMenuItem1_Click);
             // 
             // bBToolStripMenuItem
             // 
             this.bBToolStripMenuItem.Name = "bBToolStripMenuItem";
-            this.bBToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.bBToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.bBToolStripMenuItem.Text = "B and B";
             this.bBToolStripMenuItem.Click += new System.EventHandler(this.bBToolStripMenuItem_Click);
             // 
             // greedyToolStripMenuItem
             // 
             this.greedyToolStripMenuItem.Name = "greedyToolStripMenuItem";
-            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.greedyToolStripMenuItem.Text = "Greedy";
             this.greedyToolStripMenuItem.Click += new System.EventHandler(this.greedyToolStripMenuItem_Click);
             // 
@@ -223,14 +223,14 @@ namespace TSP
             this.newProblem.Image = ((System.Drawing.Image)(resources.GetObject("newProblem.Image")));
             this.newProblem.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.newProblem.Name = "newProblem";
-            this.newProblem.Size = new System.Drawing.Size(83, 22);
+            this.newProblem.Size = new System.Drawing.Size(73, 22);
             this.newProblem.Text = "New Problem";
             this.newProblem.Click += new System.EventHandler(this.newProblem_Click);
             // 
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(32, 22);
+            this.toolStripLabel1.Size = new System.Drawing.Size(31, 22);
             this.toolStripLabel1.Text = "Seed";
             // 
             // tbSeed
@@ -244,7 +244,7 @@ namespace TSP
             this.randomProblem.Image = ((System.Drawing.Image)(resources.GetObject("randomProblem.Image")));
             this.randomProblem.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.randomProblem.Name = "randomProblem";
-            this.randomProblem.Size = new System.Drawing.Size(104, 22);
+            this.randomProblem.Size = new System.Drawing.Size(91, 22);
             this.randomProblem.Text = "Random Problem";
             this.randomProblem.Click += new System.EventHandler(this.randomProblem_Click);
             // 
@@ -256,7 +256,7 @@ namespace TSP
             // toolStripLabel5
             // 
             this.toolStripLabel5.Name = "toolStripLabel5";
-            this.toolStripLabel5.Size = new System.Drawing.Size(61, 22);
+            this.toolStripLabel5.Size = new System.Drawing.Size(56, 22);
             this.toolStripLabel5.Text = "Solution #";
             // 
             // toolStripTextBox1
