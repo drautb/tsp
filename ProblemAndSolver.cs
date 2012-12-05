@@ -469,13 +469,13 @@ namespace TSP
             int iteration = -1;
 
             // variables for SA
-            double temperature = 1.0;
+            double temperature = 10.0;
             
             // Higher temperature takes longer to run, but yields better results on larger city counts.
             //double temperature = 100000.0;
             
             double absoluteTemp = 0.00001;
-            double coolingRate = .8000; // 0.9999;
+            double coolingRate = 0.9999;
             double deltaDistance = 0;
             double distance = 0;
 
@@ -486,6 +486,8 @@ namespace TSP
             // it's just taking a greedy solution. This may be one place that 
             // we could implement an optimization?
             getGreedyRoute();
+
+            solveRandomNearNeighbor();
 
             // Generate a new solution using the Greedy route
             bssf = new TSPSolution(Route);
@@ -507,7 +509,7 @@ namespace TSP
                 if ((deltaDistance < 0) ||
                     (distance > 0 && Math.Exp(-deltaDistance / temperature) > trueRand.NextDouble()))
                 {
-                    Debug.WriteLine("found better solution!");
+                    //Debug.WriteLine("found better solution!");
                     // Accept this new arrangement
                     Route = alternateRoute;
                     Array.Copy(temp_cityToRoute, cityToRoute, cityToRoute.Length);
@@ -535,6 +537,48 @@ namespace TSP
             return;
         }
 
+        public void solveFurthest()
+        {
+            //ArrayList cur_cities = new ArrayList(Cities);
+            Route = new ArrayList();
+
+            bssf = new TSPSolution(Route);
+        }
+
+        private void findFarthest(ArrayList in_cities)
+        {
+            int i, j, max_from = -1, max_to = -1;
+            double max_dist = double.NegativeInfinity;
+            double temp_dist;
+
+            for (i = 0; i < in_cities.Count; i++)
+            {
+                for (j = 0; j < in_cities.Count; j++)
+                {
+                    if (i != j)
+                    {
+                        temp_dist = ((City)in_cities[i]).costToGetTo((City)in_cities[j]);
+                        if (temp_dist > max_dist && temp_dist != double.PositiveInfinity)
+                        {
+                            max_dist = temp_dist;
+                            max_from = i;
+                            max_to = j;
+                        }
+                    }
+                }
+            }
+
+            if (max_from != -1 && max_to != -1)
+            {
+                Route.Add((City)in_cities[max_from]);
+                Route.Add((City)in_cities[max_to]);
+            }
+            else
+            {
+                Debug.WriteLine("could not find the maximum length?");
+            }
+        }
+
         double max_x, min_x, max_y, min_y;
         int dim_x, dim_y;
         double SCALE_FACTOR = 1000;
@@ -543,6 +587,72 @@ namespace TSP
         private int[] neighbor_x, neighbor_y;
         int[] cityToRoute, routeToCity;
         int[] temp_cityToRoute, temp_routeToCity;
+        ArrayList[,] city_neighbors;
+
+        /**
+         * Solve the TSP using a random choice stragegy. Pick a random city, and then
+         * pick random edges from there. If we get stuck, start over with a new random 
+         * city.
+         */
+        public void solveRandomNearNeighbor()
+        {
+            findNeighbors();
+            Route = new ArrayList();
+            ArrayList choices;
+
+            int seed = trueRand.Next(Cities.Length);
+            City startCity = Cities[seed];
+            Route.Add(startCity);
+
+            City nextCity = startCity;
+            int addNext = seed;
+
+            int failCount = 0;
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
+            while (Route.Count < Cities.Length)
+            {
+                choices = getNeighbors(nextCity);
+                nextCity = (City)choices[trueRand.Next(choices.Count)];
+                if (Route.Contains(nextCity))
+                {
+                    //Debug.WriteLine("already in the route!");
+                    continue;
+                }
+
+                if (((City)Route[Route.Count - 1]).costToGetTo(nextCity) == Double.PositiveInfinity)
+                {
+                    failCount++;
+                    if (failCount > Cities.Length)
+                    {
+                        // Start over
+                        failCount = 0;
+                        Route.Clear();
+                        startCity = Cities[trueRand.Next(Cities.Length)];
+                        Route.Add(startCity);
+                    }
+
+                    continue;
+                }
+                else
+                {
+                    Route.Add(nextCity);
+                    if (Route.Count == Cities.Length)
+                    {
+                        timer.Stop();
+
+                        bssf = new TSPSolution(Route);
+                        // update the cost of the tour. 
+                        Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+                        // do a refresh. 
+                        Program.MainForm.Invalidate();
+                        return;
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// find neighboring cities
@@ -576,12 +686,13 @@ namespace TSP
             }
 
             //Debug.WriteLine("top:\t" + max_x + "\tbottom:\t" + min_x + "\tleft:\t" + min_y + "\tright:\t" + max_y);
-            double city_sqrt = Math.Sqrt(Cities.Length);
+            double city_sqrt = Math.Ceiling(Math.Sqrt(Cities.Length)/ 2);
             x_inc = (max_x - min_y) / city_sqrt; //(max_x - min_x) / Cities.Length;
             y_inc = (max_y - min_y) / city_sqrt; //(max_y - min_y) / Cities.Length;
             
-            dim_x = dim_y = (int)Math.Ceiling(city_sqrt);
+            dim_x = dim_y = (int)Math.Ceiling(city_sqrt) + 1;
             int[,] counter = new int[dim_x, dim_y];
+            city_neighbors = new ArrayList[dim_x, dim_y];
             neighbors = new ArrayList[dim_x, dim_y];
             neighbor_x = new int[Cities.Length];
             neighbor_y = new int[Cities.Length];
@@ -594,6 +705,7 @@ namespace TSP
                     //Debug.Write(counter[i, j] + "\t");
                     counter[i, j] = 0;
                     neighbors[i, j] = new ArrayList();
+                    city_neighbors[i, j] = new ArrayList();
                 }
                 //Debug.Write("\n");
             }
@@ -607,22 +719,42 @@ namespace TSP
                 cur_city = getCoor(Cities[i]);
                 //Debug.WriteLine("city:\t" + i + "\tx:\t" + cur_city.getX() + "\ty:\t" + cur_city.getY());
 
+                city_neighbors[cur_city.getX(), cur_city.getY()].Add(Cities[i]);
                 neighbors[cur_city.getX(), cur_city.getY()].Add(i);
                 counter[cur_city.getX(), cur_city.getY()] = counter[cur_city.getX(), cur_city.getY()] + 1;
                 neighbor_x[i] = cur_city.getX();
                 neighbor_y[i] = cur_city.getY();
             }
 
-
+            //for (i = 0; i < dim_x; i++)
+            {
+                //for (j = 0; j < dim_y; j++)
+                {
+                    //if (neighbors[i, j].Count > 0)
+                    {
+                        //ArrayList choices = getNeighbors((City)city_neighbors[i, j][0]);
+                        //Debug.WriteLine(i + "\t" + j + "\t");
+                        //for (int l = 0; l < neighbors[i, j].Count; l++)
+                        {
+                            //Debug.Write(neighbors[i,j].Count + "\t");
+                        }
+                    }
+                }
+                //Debug.Write("\n");
+            }
 
             //for (i = 0; i < dim_x; i++)
             {
-            ///    for (j = 0; j < dim_y; j++)
+                //for (j = 0; j < dim_y; j++)
                 {
-                    //Debug.Write(neighbors[i, j].Count + "\t");
-             //       for (int l = 0; l < neighbors[i, j].Count; l++)
+                    //if (neighbors[i, j].Count > 0)
                     {
-                        //Debug.Write(neighbors[i, j][l] + "\t");
+                        //ArrayList choices = getNeighbors((City)city_neighbors[i, j][0]);
+                        //Debug.WriteLine(i + "\t" + j + "\t");
+                        //for (int l = 0; l < choices.Count; l++)
+                        {
+                            //Debug.WriteLine("\t" + ((City)city_neighbors[i, j][0]).costToGetTo((City)choices[l]) + "\t");
+                        }
                     }
                 }
                 //Debug.Write("\n");
@@ -717,6 +849,46 @@ namespace TSP
             return cur_neighbors;
         }
 
+        private ArrayList getNeighbors(City in_city)
+        {
+            ArrayList cur_neighbors = new ArrayList();
+            coordinate coor = getCoor(in_city);
+            int x = coor.getX();
+            int y = coor.getY();
+
+            // add yourself
+            cur_neighbors.AddRange(city_neighbors[x, y]);
+            cur_neighbors.Remove(in_city);
+
+            // add the neighbors
+            if (x + 1 < dim_x)
+            {
+                cur_neighbors.AddRange(city_neighbors[x + 1, y]);
+                if (y + 1 < dim_y)
+                    cur_neighbors.AddRange(city_neighbors[x + 1, y + 1]);
+                if (y - 1 >= 0)
+                    cur_neighbors.AddRange(city_neighbors[x + 1, y - 1]);
+            }
+
+            if (x - 1 >= 0)
+            {
+                cur_neighbors.AddRange(city_neighbors[x - 1, y]);
+                if (y + 1 < dim_y)
+                    cur_neighbors.AddRange(city_neighbors[x - 1, y + 1]);
+                if (y - 1 >= 0)
+                    cur_neighbors.AddRange(city_neighbors[x - 1, y - 1]);
+            }
+
+            if (y - 1 >= 0)
+                cur_neighbors.AddRange(city_neighbors[x, y - 1]);
+            if (y + 1 < dim_y)
+                cur_neighbors.AddRange(city_neighbors[x, y + 1]);
+
+            //Debug.WriteLine("x:\t" + x + "\ty:\t" + y + "\tcount:\t" + cur_neighbors.Count);
+
+            return cur_neighbors;
+        }
+
         /**
          * Returns a random variation on route that is still correct. (assuming that 
          * route was complete to begin with)
@@ -791,6 +963,7 @@ namespace TSP
             // We'll do them at the same time by just flipping the entire route between b and c.
             // Until e1 and e2 equal eachother, or they cross, we just march towards the middle, 
             // swapping cities in the route as we go.
+            e2 = e2 - 1;
             City swapMe = null;
             int swapPosRoute, swapPosCity;
             Array.Copy(routeToCity, temp_routeToCity, routeToCity.Length);

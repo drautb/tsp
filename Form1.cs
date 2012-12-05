@@ -172,6 +172,7 @@ namespace TSP
         {
             this.reset();
 
+            //CityData.solveRandomNearNeighbor();
             CityData.solveRandom();
         }
 
@@ -198,6 +199,13 @@ namespace TSP
             {
                 AlgorithmMenu2.ShowDropDown();
             }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            this.reset();
+
+            CityData.solveFurthest();
         }
     }
 }
