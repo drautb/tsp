@@ -539,10 +539,167 @@ namespace TSP
 
         public void solveFurthest()
         {
-            //ArrayList cur_cities = new ArrayList(Cities);
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
+            ArrayList cur_cities = new ArrayList(Cities);
             Route = new ArrayList();
+            City centerPoint, furthestPoint, insertAfter;
+
+            constructInitial(cur_cities);
+
+            //while (cur_cities.Count > 0)
+            for(int i = 0; i < 2; i++)
+            {
+                centerPoint = center();
+
+                //furthestPoint = findTotalFarthest(cur_cities);
+
+                furthestPoint = findFarthest(centerPoint, cur_cities);
+                insertAfter = findClosestInRoute(furthestPoint);
+                insertIntoRoute(insertAfter, furthestPoint);
+                cur_cities.Remove(furthestPoint);
+
+                bssf = new TSPSolution(Route);
+                Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+                Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+                Program.MainForm.Invalidate();
+            }
 
             bssf = new TSPSolution(Route);
+            timer.Stop();
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+            Program.MainForm.Invalidate();
+        }
+
+        private void constructInitial(ArrayList in_cities)
+        {
+            findFarthest(in_cities);
+            //int seed = trueRand.Next(2);
+            //seed = 0;
+            /*
+            int i, max_to = -1;
+            double temp_dist, max_dist = double.NegativeInfinity;
+            for (i = 0; i < in_cities.Count; i++)
+            {
+                temp_dist = ((City)Route[seed]).costToGetTo((City)in_cities[i]);
+                if (temp_dist > max_dist)
+                {
+                    max_dist = temp_dist;
+                    max_to = i;
+                }
+            }*/
+
+            // add the next farthest city
+            //Route.Add((City)in_cities[max_to]);
+            //in_cities.Remove(in_cities[max_to]);
+        }
+
+        private City center()
+        {
+            double x = 0, y = 0;
+            for (int i = 0; i < Route.Count; i++)
+            {
+                x += ((City)Route[i]).X;
+                y += ((City)Route[i]).Y;
+            }
+
+            x = x / Route.Count;
+            y = y / Route.Count;
+
+            City temp_city = new City(x, y);
+            return temp_city;
+        }
+
+        private City findTotalFarthest(ArrayList in_cities)
+        {
+            int i, j, farthestPoint = -1;
+            double temp_dist = 0, dist_agg = 0, max_dist = double.NegativeInfinity;
+
+            for (i = 0; i < in_cities.Count; i++)
+            {
+                for (j = 0; j < Route.Count; j++)
+                {
+                    temp_dist = ((City)Route[j]).costToGetTo((City)in_cities[i]);
+                    if (temp_dist != double.PositiveInfinity)
+                    {
+                        dist_agg += temp_dist;
+                    }
+                }
+
+                if (temp_dist > max_dist)
+                {
+                    max_dist = temp_dist;
+                    farthestPoint = i;
+                }
+
+                temp_dist = 0;
+                dist_agg = 0;
+            }
+
+            Debug.WriteLine(farthestPoint + "\t" + max_dist);
+            return (City)in_cities[farthestPoint];
+        }
+
+        private void insertIntoRoute(City indexCity, City addCity)
+        {
+            int add_index = -1;
+
+            for (int i = 0; i < Route.Count; i++)
+            {
+                if (Route[i] == indexCity)
+                {
+                    //Debug.WriteLine("FOUND WHERE TO INSERT!");
+                    add_index = i;
+                }
+            }
+
+            if (add_index != -1)
+            {
+                Route.Insert(add_index, addCity);
+            }
+            else
+            {
+                Debug.WriteLine("UH OH! COULD NOT FIND A PLACE TO INSERT THE ITEM IN THE ROUTE!");
+            }
+        }
+
+        private City findClosestInRoute(City in_city)
+        {
+            double temp_dist, min_dist = double.PositiveInfinity;
+            int min_from = -1;
+
+            for (int i = 0; i < Route.Count; i++)
+            {
+                temp_dist = ((City)Route[i]).costToGetTo(in_city);
+                if (temp_dist < min_dist)
+                {
+                    min_dist = temp_dist;
+                    min_from = i;
+                }
+            }
+
+            return (City)Route[min_from];
+        }
+
+        private City findFarthest(City in_city, ArrayList in_cities)
+        {
+            double temp_dist, max_dist = double.NegativeInfinity;
+            int max_to = -1;
+
+            for (int i = 0; i < in_cities.Count; i++)
+            {
+                temp_dist = in_city.costToGetTo((City)in_cities[i]);
+                if (temp_dist > max_dist)
+                {
+                    max_dist = temp_dist;
+                    max_to = i;
+                }
+            }
+
+            Debug.WriteLine(max_to + "\t" + max_dist);
+            return (City)in_cities[max_to];
         }
 
         private void findFarthest(ArrayList in_cities)
@@ -572,6 +729,9 @@ namespace TSP
             {
                 Route.Add((City)in_cities[max_from]);
                 Route.Add((City)in_cities[max_to]);
+
+                in_cities.Remove(Cities[max_from]);
+                in_cities.Remove(Cities[max_to]);
             }
             else
             {
