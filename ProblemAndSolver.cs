@@ -548,22 +548,18 @@ namespace TSP
 
             constructInitial(cur_cities);
 
-            //while (cur_cities.Count > 0)
-            for(int i = 0; i < 2; i++)
+            while (cur_cities.Count > 0)
+            //for(int i = 0; i < 7; i++)
             {
                 centerPoint = center();
 
                 //furthestPoint = findTotalFarthest(cur_cities);
-
                 furthestPoint = findFarthest(centerPoint, cur_cities);
-                insertAfter = findClosestInRoute(furthestPoint);
-                insertIntoRoute(insertAfter, furthestPoint);
+                insertEdge(furthestPoint, cur_cities);
+                
+                //insertAfter = findClosestInRoute(furthestPoint);
+                //insertIntoRoute(insertAfter, furthestPoint);
                 cur_cities.Remove(furthestPoint);
-
-                bssf = new TSPSolution(Route);
-                Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-                Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
-                Program.MainForm.Invalidate();
             }
 
             bssf = new TSPSolution(Route);
@@ -573,27 +569,97 @@ namespace TSP
             Program.MainForm.Invalidate();
         }
 
+        private void insertEdge(City furthestPoint, ArrayList in_cities)
+        {
+            int prevCity = -1, postCity = -1;
+            double min_dist = double.PositiveInfinity;
+            double distToEdge;
+
+            for (int j = 0; j < Route.Count; j++)
+            {
+                if (j < Route.Count - 1)
+                {
+                    distToEdge = FindDistanceToSegment(furthestPoint, (City)Route[j], (City)Route[j + 1]);
+                    //Debug.WriteLine(j + "\tto\t" + (j + 1) + "\t:" + distToEdge);
+
+                    if (distToEdge < min_dist && furthestPoint.costToGetTo((City)Route[j + 1]) != double.PositiveInfinity
+                        && ((City)Route[j]).costToGetTo(furthestPoint) != double.PositiveInfinity)
+                    {
+                        min_dist = distToEdge;
+                        prevCity = j;
+                        postCity = j + 1;
+                    }
+                }
+                else
+                {
+                    distToEdge = FindDistanceToSegment(furthestPoint, (City)Route[j], (City)Route[0]);
+                    //Debug.WriteLine(j + "\tto\t0\t:" + distToEdge);
+
+                    if (distToEdge < min_dist && furthestPoint.costToGetTo((City)Route[0]) != double.PositiveInfinity
+                        && ((City)Route[j]).costToGetTo(furthestPoint) != double.PositiveInfinity)
+                    {
+                        min_dist = distToEdge;
+                        prevCity = j;
+                        postCity = 0;
+                    }
+                }   
+            }
+
+            if (prevCity == -1)
+            {
+                Debug.WriteLine("UH OH! no valid edge has been found, no entry point for new city");
+            }
+            else
+            {
+                Route.Insert(prevCity + 1, furthestPoint);
+            }
+            //in_cities.Remove(furthestPoint);
+        }
+
+        private double FindDistanceToSegment(City pt, City p1, City p2)
+        {
+            City closest;
+            double dx = p2.X - p1.X;
+            double dy = p2.Y - p1.Y;
+            if ((dx == 0) && (dy == 0))
+            {
+                // It's a point not a line segment.
+                closest = p1;
+                dx = pt.X - p1.X;
+                dy = pt.Y - p1.Y;
+                return Math.Sqrt(dx * dx + dy * dy);
+            }
+
+            // Calculate the t that minimizes the distance.
+            double t = ((pt.X - p1.X) * dx + (pt.Y - p1.Y) * dy) / (dx * dx + dy * dy);
+
+            // See if this represents one of the segment's
+            // end points or a point in the middle.
+            if (t < 0)
+            {
+                closest = new City(p1.X, p1.Y);
+                dx = pt.X - p1.X;
+                dy = pt.Y - p1.Y;
+            }
+            else if (t > 1)
+            {
+                closest = new City(p2.X, p2.Y);
+                dx = pt.X - p2.X;
+                dy = pt.Y - p2.Y;
+            }
+            else
+            {
+                closest = new City(p1.X + t * dx, p1.Y + t * dy);
+                dx = pt.X - closest.X;
+                dy = pt.Y - closest.Y;
+            }
+
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
         private void constructInitial(ArrayList in_cities)
         {
             findFarthest(in_cities);
-            //int seed = trueRand.Next(2);
-            //seed = 0;
-            /*
-            int i, max_to = -1;
-            double temp_dist, max_dist = double.NegativeInfinity;
-            for (i = 0; i < in_cities.Count; i++)
-            {
-                temp_dist = ((City)Route[seed]).costToGetTo((City)in_cities[i]);
-                if (temp_dist > max_dist)
-                {
-                    max_dist = temp_dist;
-                    max_to = i;
-                }
-            }*/
-
-            // add the next farthest city
-            //Route.Add((City)in_cities[max_to]);
-            //in_cities.Remove(in_cities[max_to]);
         }
 
         private City center()
@@ -638,7 +704,7 @@ namespace TSP
                 dist_agg = 0;
             }
 
-            Debug.WriteLine(farthestPoint + "\t" + max_dist);
+            //Debug.WriteLine(farthestPoint + "\t" + max_dist);
             return (City)in_cities[farthestPoint];
         }
 
@@ -698,7 +764,7 @@ namespace TSP
                 }
             }
 
-            Debug.WriteLine(max_to + "\t" + max_dist);
+            //Debug.WriteLine(max_to + "\t" + max_dist);
             return (City)in_cities[max_to];
         }
 
