@@ -832,10 +832,10 @@ namespace TSP
             while (cur_cities.Count > 0)
             //for(int i = 0; i < 7; i++)
             {
-                furthestPoint = findTotalFarthest(cur_cities);
+                //furthestPoint = findTotalFarthest(cur_cities);
                 
-                //centerPoint = center();
-                //furthestPoint = findFarthest(centerPoint, cur_cities);
+                centerPoint = center();
+                furthestPoint = findFarthest(centerPoint, cur_cities);
                 insertEdge(furthestPoint, cur_cities);
                 
                 //insertAfter = findClosestInRoute(furthestPoint);
