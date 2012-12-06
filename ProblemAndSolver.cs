@@ -346,8 +346,6 @@ namespace TSP
         {
             cityToRoute = new int[Cities.Length];
             routeToCity = new int[Cities.Length];
-            temp_cityToRoute = new int[Cities.Length];
-            temp_routeToCity = new int[Cities.Length];
             double distance = double.PositiveInfinity;
             int seed;
 
