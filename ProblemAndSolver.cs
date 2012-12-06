@@ -442,11 +442,292 @@ namespace TSP
         }
 
         /**
-         * Solve the TSP using an include/exclude B&B strategy
-         */
+        * Solve the TSP using an include/exclude B&B strategy
+        * 
+        * First, get an upper bound, bssf.
+        * 
+        * Generate the initial Reduced Cost Matrix, (RCM) which
+        * will give us the initial lower bound.
+        * 
+        * 
+        */
         public void solveBranchAndBound()
         {
-            
+            // Stats
+            int totalStatesGenerated = 0, statesPruned = 0, maxStatesStored = 0;
+            bool initialBssfIsFinal = true;
+
+            // Get an upper bound
+            getGreedyRoute();
+            bssf = new TSPSolution(Route);
+
+            // Generate the RCM, and get it's lower bound from the reduction
+            double[,] rcm = generateRCM();
+            double lowerBound = reduceCM(ref rcm);
+
+            // Now we need to start throwing states on the queue and processing them..
+            PriorityQueue<BBState> stateQueue = new PriorityQueue<BBState>();
+
+            // Create initial state
+            BBState initialState = new BBState(rcm, lowerBound);
+            stateQueue.Enqueue(initialState, initialState.bound);
+            totalStatesGenerated = maxStatesStored = 1;
+
+            // Ok, now we kick off the process!
+            // Start the timer..
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
+            BBState curState = null;
+            while (stateQueue.Count > 0)
+            {
+                /*if (timer.ElapsedMilliseconds > 30000) // 30 seconds
+                    break; */
+
+                curState = stateQueue.Dequeue();
+
+                // If this state's lower bound is greater than BSSF, then we 
+                // prune it out
+                if (curState.bound > costOfBssf())
+                {
+                    statesPruned++;
+                    continue;
+                }
+
+                // If it's not, then see if it's a complete solution. If it is,
+                // then update BSSF.
+                if (curState.isCompleteSolution(ref Cities))
+                {
+                    bssf = new TSPSolution(curState.getRoute(ref Cities));
+                    initialBssfIsFinal = false;
+                    continue;
+                }
+
+                // If it's not a complete solution, but it's within range, then
+                // expand it into two child states, one with an included edge, one 
+                // with the same edge excluded.
+                Tuple<int, int> edge = curState.getNextEdge();
+
+                if (edge == null)
+                    continue;
+
+                // Ok, now we have the next edge to include and exclude in different states to maximize 
+                // the difference in bounds. So we need to create states corresponding to each and put
+                // them in the queue.
+                BBState incState = new BBState(curState.cm, curState.bound, curState.includedEdges);
+                incState.includedEdges.Add(edge);
+
+                incState.cm[edge.Item1, edge.Item2] = double.PositiveInfinity;
+                incState.cm[edge.Item2, edge.Item1] = double.PositiveInfinity;
+
+                for (int t = 0; t < incState.cm.GetLength(0); t++)
+                    incState.cm[t, edge.Item2] = double.PositiveInfinity;
+
+                for (int t = 0; t < incState.cm.GetLength(1); t++)
+                    incState.cm[edge.Item1, t] = double.PositiveInfinity;
+
+                // Need to take out edges in incState that could be used to complete a premature cycle
+                if (incState.includedEdges.Count < incState.cm.GetLength(0) - 1)
+                {
+                    int start = edge.Item1, end = edge.Item2, city;
+
+                    city = getCityExited(start, incState.includedEdges);
+                    while (city != -1)
+                    {
+                        start = city;
+                        city = getCityExited(start, incState.includedEdges);
+                    }
+
+                    city = getCityEntered(end, incState.includedEdges);
+                    while (city != -1)
+                    {
+                        end = city;
+                        city = getCityEntered(end, incState.includedEdges);
+                    }
+
+                    while (start != edge.Item2)
+                    {
+                        incState.cm[end, start] = double.PositiveInfinity;
+                        incState.cm[edge.Item2, start] = double.PositiveInfinity;
+                        start = getCityEntered(start, incState.includedEdges);
+                    }
+                }
+
+                //  finish setting up the state and put it in the queue
+                incState.bound = curState.bound + reduceCM(ref incState.cm);
+
+                totalStatesGenerated++;
+                if (incState.bound > costOfBssf())
+                {
+                    statesPruned++;
+                }
+                else
+                {
+                    stateQueue.Enqueue(incState, incState.bound);
+                    if (stateQueue.Count > maxStatesStored)
+                        maxStatesStored = stateQueue.Count;
+                }
+
+                BBState exState = new BBState(curState.cm, curState.bound, curState.includedEdges);
+
+                exState.cm[edge.Item1, edge.Item2] = double.PositiveInfinity;
+                exState.bound = curState.bound + reduceCM(ref exState.cm);
+
+                totalStatesGenerated++;
+                if (exState.bound > costOfBssf())
+                {
+                    statesPruned++;
+                }
+                else
+                {
+                    stateQueue.Enqueue(exState, exState.bound);
+                    if (stateQueue.Count > maxStatesStored)
+                        maxStatesStored = stateQueue.Count;
+                }
+            }
+
+            timer.Stop();
+
+            Program.MainForm.tbElapsedTime.Text = " " + timer.Elapsed;
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            // do a refresh. 
+            Program.MainForm.Invalidate();
+
+            String msg = "\tB&B RESULTS\n";
+            if (timer.ElapsedMilliseconds > 30000)
+                msg += "\nSearch timed out, 30 seconds expired.";
+            if (initialBssfIsFinal)
+                msg += "\nInitial BSSF (Greedy) is final solution.";
+            else
+                msg += "\nA better BSSF than the initial was found.";
+
+            msg += "\n\n\tSTATS:";
+            msg += "\nTotal States Created:\t" + totalStatesGenerated;
+            msg += "\nTotal States Pruned:\t" + statesPruned;
+            msg += "\nMax States Stored: \t" + maxStatesStored;
+
+            MessageBox.Show(msg);
+
+            return;
+        }
+
+        private int getCityEntered(int cityExited, List<Tuple<int, int>> edges)
+        {
+            foreach (Tuple<int, int> t in edges)
+            {
+                if (t.Item1 == cityExited)
+                    return t.Item2;
+            }
+
+            return -1;
+        }
+
+        private int getCityExited(int cityEntered, List<Tuple<int, int>> edges)
+        {
+            foreach (Tuple<int, int> t in edges)
+            {
+                if (t.Item2 == cityEntered)
+                    return t.Item1;
+            }
+
+            return -1;
+        }
+
+        /**
+         * Method to generate a reduced cost matrix for the B&B
+         */
+        private double[,] generateRCM()
+        {
+            double[,] rcm = new double[Cities.Length, Cities.Length];
+            for (int i = 0; i < Cities.Length; i++)
+            {
+                for (int j = 0; j < Cities.Length; j++)
+                {
+                    // Cities can't go to themselves
+                    if (i == j)
+                    {
+                        rcm[i, j] = double.PositiveInfinity;
+                        continue;
+                    }
+
+                    rcm[i, j] = Cities[i].costToGetTo(Cities[j]);
+                }
+            }
+
+            return rcm;
+        }
+
+        /**
+         * Method that will reduce a given cost matrix
+         */
+        public static double reduceCM(ref double[,] cm)
+        {
+            double minPath = double.PositiveInfinity;
+            double lowerBound = 0;
+
+            // Reduce the rows
+            for (int i = 0; i < cm.GetLength(0); i++)
+            {
+                minPath = double.PositiveInfinity;
+                for (int j = 0; j < cm.GetLength(1); j++)
+                {
+                    if (cm[i, j] < minPath)
+                        minPath = cm[i, j];
+                }
+
+                // if the minimum path found was infinite or 0, then we skip the row. (it's 
+                // already reduced or not reducible.
+                if (minPath == double.PositiveInfinity || minPath == 0)
+                    continue;
+
+                // Otherwise, we need to subtract minPath from each entry in the row
+                lowerBound += minPath;
+                for (int j = 0; j < cm.GetLength(1); j++)
+                {
+                    cm[i, j] -= minPath;
+                }
+            }
+
+            // Reduce the columns
+            for (int j = 0; j < cm.GetLength(1); j++)
+            {
+                minPath = double.PositiveInfinity;
+
+                for (int i = 0; i < cm.GetLength(0); i++)
+                {
+                    if (cm[i, j] < minPath)
+                        minPath = cm[i, j];
+                }
+
+                if (minPath == double.PositiveInfinity || minPath == 0)
+                    continue;
+
+                lowerBound += minPath;
+                for (int i = 0; i < cm.GetLength(0); i++)
+                {
+                    cm[i, j] -= minPath;
+                }
+            }
+
+            return lowerBound;
+        }
+
+        /**
+         * Debug method to print the RCM to the output window
+         */
+        public static void outputRCM(double[,] rcm)
+        {
+            for (int i = 0; i < rcm.GetLength(0); i++)
+            {
+                string line = "";
+                for (int j = 0; j < rcm.GetLength(1); j++)
+                {
+                    line += rcm[i, j].ToString().PadLeft(10, ' ') + "\t";
+                }
+                Debug.WriteLine(line);
+            }
         }
 
         /**
