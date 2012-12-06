@@ -44,6 +44,12 @@ namespace TSP
             set { _Y = value; }
         }
 
+        public double elevation
+        {
+            get { return _elevation; }
+            set { _elevation = value; }
+        }
+
 
         /// <summary>
         /// How much does it cost to get from this city to the destination?

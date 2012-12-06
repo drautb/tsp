@@ -331,7 +331,7 @@ namespace TSP
             bssf = new TSPSolution(Route);
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.TotalSeconds.ToString();
             // do a refresh. 
             Program.MainForm.Invalidate();
             return;
@@ -432,7 +432,7 @@ namespace TSP
                         bssf = new TSPSolution(Route);
                         // update the cost of the tour. 
                         Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.TotalSeconds.ToString();
                         // do a refresh. 
                         Program.MainForm.Invalidate();
                         return;
@@ -531,7 +531,7 @@ namespace TSP
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
 
-            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.TotalSeconds.ToString();
             // do a refresh. 
             Program.MainForm.Invalidate();
             return;
@@ -551,10 +551,10 @@ namespace TSP
             while (cur_cities.Count > 0)
             //for(int i = 0; i < 7; i++)
             {
-                centerPoint = center();
-
-                //furthestPoint = findTotalFarthest(cur_cities);
-                furthestPoint = findFarthest(centerPoint, cur_cities);
+                furthestPoint = findTotalFarthest(cur_cities);
+                
+                //centerPoint = center();
+                //furthestPoint = findFarthest(centerPoint, cur_cities);
                 insertEdge(furthestPoint, cur_cities);
                 
                 //insertAfter = findClosestInRoute(furthestPoint);
@@ -565,7 +565,7 @@ namespace TSP
             bssf = new TSPSolution(Route);
             timer.Stop();
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+            Program.MainForm.tbElapsedTime.Text = timer.Elapsed.TotalSeconds.ToString();
             Program.MainForm.Invalidate();
         }
 
@@ -871,7 +871,7 @@ namespace TSP
                         bssf = new TSPSolution(Route);
                         // update the cost of the tour. 
                         Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.ToString();
+                        Program.MainForm.tbElapsedTime.Text = timer.Elapsed.TotalSeconds.ToString();
                         // do a refresh. 
                         Program.MainForm.Invalidate();
                         return;

@@ -145,6 +145,7 @@ namespace TSP
             {
                 MessageBox.Show("Problem size must be an integer.");
             };
+            CityData.solveFurthest();
         }
 
         private void dToolStripMenuItem_Click(object sender, EventArgs e)
